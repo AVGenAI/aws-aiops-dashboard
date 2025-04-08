@@ -6,6 +6,7 @@ import AnomalyDetail from '../components/anomalies/AnomalyDetail';
 import TimeSeriesChart from '../components/anomalies/TimeSeriesChart';
 import ResourceHeatmap from '../components/anomalies/ResourceHeatmap';
 import AnomalyCorrelation from '../components/anomalies/AnomalyCorrelation';
+import ExportPanel from '../components/export/ExportPanel';
 
 interface Anomaly {
   id: string;
@@ -638,13 +639,21 @@ export default function AnomaliesPage() {
               </button>
             </div>
           ) : (
-            <TimeSeriesChart
-              data={timeSeriesData}
-              title={`${timeSeriesMetric} Over Time`}
-              metric={timeSeriesMetric}
-              timeRange={timeRange}
-              onTimeRangeChange={handleTimeRangeChange}
-            />
+            <div className="relative">
+              <div className="absolute top-4 right-4 z-10">
+                <ExportPanel
+                  data={timeSeriesData}
+                  filename={`${timeSeriesMetric.toLowerCase().replace(/\s+/g, '-')}-${currentEnv.id}-${timeRange}`}
+                />
+              </div>
+              <TimeSeriesChart
+                data={timeSeriesData}
+                title={`${timeSeriesMetric} Over Time`}
+                metric={timeSeriesMetric}
+                timeRange={timeRange}
+                onTimeRangeChange={handleTimeRangeChange}
+              />
+            </div>
           )}
           
           {/* Resource Heatmap and Anomaly Correlation */}
@@ -668,12 +677,20 @@ export default function AnomaliesPage() {
                 </button>
               </div>
             ) : (
-              <ResourceHeatmap
-                data={resourceData}
-                title="Resource Utilization Heatmap"
-                xMetric={resourceXMetric}
-                yMetric={resourceYMetric}
-              />
+              <div className="relative">
+                <div className="absolute top-4 right-4 z-10">
+                  <ExportPanel
+                    data={resourceData}
+                    filename={`resource-utilization-${resourceXMetric.toLowerCase().replace(/\s+/g, '-')}-${resourceYMetric.toLowerCase().replace(/\s+/g, '-')}-${currentEnv.id}`}
+                  />
+                </div>
+                <ResourceHeatmap
+                  data={resourceData}
+                  title="Resource Utilization Heatmap"
+                  xMetric={resourceXMetric}
+                  yMetric={resourceYMetric}
+                />
+              </div>
             )}
             
             {/* Anomaly Correlation */}
@@ -695,11 +712,19 @@ export default function AnomaliesPage() {
                 </button>
               </div>
             ) : (
-              <AnomalyCorrelation
-                data={correlationData}
-                title="Anomaly Type Correlation"
-                onSelectAnomaly={setSelectedAnomaly}
-              />
+              <div className="relative">
+                <div className="absolute top-4 right-4 z-10">
+                  <ExportPanel
+                    data={correlationData}
+                    filename={`anomaly-correlation-${currentEnv.id}`}
+                  />
+                </div>
+                <AnomalyCorrelation
+                  data={correlationData}
+                  title="Anomaly Type Correlation"
+                  onSelectAnomaly={setSelectedAnomaly}
+                />
+              </div>
             )}
           </div>
         </div>
