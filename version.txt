@@ -1,0 +1,43 @@
+AWS AIOps Dashboard - Version 1.0.0
+
+Release Date: April 7, 2025
+
+Features:
+- Complete AWS Console-like experience with multiple pages and tabs
+- Environment selector (Dev, UAT, Prod) that affects data displayed across the application
+- Dashboard with overview cards and quick access links
+- Resource discovery and visualization
+- Stack management capabilities
+- Anomaly detection with enable/disable functionality
+- Cost and security monitoring
+- Automation rules management with create/edit/delete capabilities
+- User management with add/edit/delete functionality
+- Explore AWS section with guides and resources
+- Solutions catalog organized by categories
+- AWS Blog section with recent announcements
+- Trusted Advisor with environment-specific recommendations
+- Health Dashboard showing service status and health events
+- Settings page with AWS credentials, notifications, and preferences
+
+Components:
+- Icon system for AWS services
+- Modal system for forms and dialogs
+- Environment context for global state management
+- API endpoints for dynamic data based on selected environment
+
+Pages:
+- Dashboard
+- Discover Resources
+- Manage Stacks
+- Anomaly Detection
+- Cost & Security
+- Automation
+- Explore AWS
+- Solutions
+- AWS Blog
+- Trusted Advisor
+- Health Dashboard
+- User Management
+- Settings
+
+This version serves as the foundation for the AWS AIOps Dashboard, providing a comprehensive interface for managing AWS resources across multiple environments.

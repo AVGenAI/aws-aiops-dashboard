@@ -1,0 +1,17 @@
+/app
+├── dashboard
+│   └── page.tsx
+├── discover
+│   └── page.tsx
+├── stacks
+│   └── page.tsx
+├── anomalies
+│   └── page.tsx
+├── cost-security
+│   └── page.tsx
+├── automation
+│   └── page.tsx
+├── users
+│   └── page.tsx
+├── settings
+│   └── page.tsx
