@@ -1,4 +1,4 @@
-AWS TGSAIOps Dashboard - Version 3.0.0
+AWS TGSAIOps Dashboard - Version 4.0.0
 
 Release Date: April 8, 2025
 
@@ -9,6 +9,8 @@ Features:
 - Resource discovery and visualization
 - Stack management capabilities
 - Anomaly detection with enable/disable functionality
+- Root Cause Analysis (RCA) for anomalies with AI-powered insights
+- Predictive Analytics with SageMaker integration for resource utilization forecasting
 - Cost and security monitoring
 - Automation rules management with create/edit/delete capabilities
 - User management with add/edit/delete functionality
@@ -28,12 +30,15 @@ Components:
 - API endpoints for dynamic data based on selected environment
 - Bedrock model selector and prompt builder
 - CloudWatch metrics visualization
+- Time-series forecasting with SageMaker
+- Root Cause Analysis with Bedrock AI models
 
 Pages:
 - Dashboard
 - Discover Resources
 - Manage Stacks
 - Anomaly Detection
+- Predictive Analytics
 - Cost & Security
 - Automation
 - AWS Services
@@ -46,4 +51,4 @@ Pages:
 - User Management
 - Settings
 
-This version serves as the foundation for the AWS AIOps Dashboard, providing a comprehensive interface for managing AWS resources across multiple environments.
+This version enhances the AWS AIOps Dashboard with advanced AI capabilities, including Root Cause Analysis for anomalies and Predictive Analytics for resource utilization forecasting, providing deeper insights and proactive management of AWS resources.
