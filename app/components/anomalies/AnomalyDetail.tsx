@@ -32,6 +32,43 @@ export default function AnomalyDetail({ anomaly, onToggle }: AnomalyDetailProps)
     const date = new Date(timestamp);
     return date.toLocaleString();
   };
+  
+  // Function to generate AWS console URLs for different resource types
+  const getResourceConsoleUrl = (resource: string, resourceType: string): string => {
+    // Extract the service and resource name
+    const [service, resourceName] = resource.split(': ');
+    
+    // Default region - in a real app, this would come from configuration
+    const region = 'us-east-1';
+    
+    switch (service.toLowerCase()) {
+      case 'lambda':
+        return `https://console.aws.amazon.com/lambda/home?region=${region}#/functions/${resourceName}`;
+      case 'ec2':
+        return `https://console.aws.amazon.com/ec2/v2/home?region=${region}#Instances:instanceId=${resourceName}`;
+      case 'rds':
+        return `https://console.aws.amazon.com/rds/home?region=${region}#database:id=${resourceName}`;
+      case 'dynamodb':
+        return `https://console.aws.amazon.com/dynamodb/home?region=${region}#tables:selected=${resourceName}`;
+      case 'eks':
+        return `https://console.aws.amazon.com/eks/home?region=${region}#/clusters/${resourceName}`;
+      case 'ecs':
+        return `https://console.aws.amazon.com/ecs/home?region=${region}#/clusters/${resourceName}`;
+      case 'api gateway':
+      case 'apigateway':
+        return `https://console.aws.amazon.com/apigateway/home?region=${region}#/apis/${resourceName}`;
+      case 'cloudfront':
+        return `https://console.aws.amazon.com/cloudfront/home?region=${region}#distribution-settings:${resourceName}`;
+      case 'step functions':
+      case 'stepfunctions':
+        return `https://console.aws.amazon.com/states/home?region=${region}#/statemachines/view/${resourceName}`;
+      case 'appsync':
+        return `https://console.aws.amazon.com/appsync/home?region=${region}#/${resourceName}`;
+      default:
+        // For unknown services, link to the AWS console home
+        return `https://console.aws.amazon.com/console/home?region=${region}`;
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -79,7 +116,16 @@ export default function AnomalyDetail({ anomaly, onToggle }: AnomalyDetailProps)
         </div>
         <div className="flex-1">
           <div className="flex justify-between items-start">
-            <h3 className="font-medium text-gray-800">{anomaly.resource}</h3>
+            <h3 className="font-medium text-gray-800">
+              <a 
+                href={getResourceConsoleUrl(anomaly.resource, anomaly.resourceType)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-800 hover:text-blue-600 hover:underline"
+              >
+                {anomaly.resource}
+              </a>
+            </h3>
             <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(anomaly.status)}`}>
               {anomaly.status}
             </span>
@@ -129,9 +175,26 @@ export default function AnomalyDetail({ anomaly, onToggle }: AnomalyDetailProps)
                   <div className="bg-gray-50 p-3 rounded border border-gray-200 text-xs font-mono">
                     {anomaly.details.logPatterns.map((pattern, index) => (
                       <div key={index} className="mb-1 last:mb-0">
-                        {pattern}
+                        <a 
+                          href={`https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:logs-insights?queryDetail=~(end~0~start~-3600~timeType~'RELATIVE~unit~'seconds~editorString~'${encodeURIComponent(pattern)}')`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {pattern}
+                        </a>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-2 text-right">
+                    <a 
+                      href="https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:logs-insights" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Open in CloudWatch Logs Insights →
+                    </a>
                   </div>
                 </div>
               )}
@@ -141,10 +204,26 @@ export default function AnomalyDetail({ anomaly, onToggle }: AnomalyDetailProps)
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Affected Metrics</h4>
                   <div className="flex flex-wrap gap-2">
                     {anomaly.details.affectedMetrics.map((metric, index) => (
-                      <span key={index} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+                      <a 
+                        key={index} 
+                        href={`https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2:graph=~(metrics~(~(~'AWS*2f*${metric.split(':')[0]}~'${metric.split(':')[1] || metric})))`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100 transition-colors"
+                      >
                         {metric}
-                      </span>
+                      </a>
                     ))}
+                  </div>
+                  <div className="mt-2 text-right">
+                    <a 
+                      href="https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2:graph=~()" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Open in CloudWatch Metrics →
+                    </a>
                   </div>
                 </div>
               )}
@@ -155,9 +234,26 @@ export default function AnomalyDetail({ anomaly, onToggle }: AnomalyDetailProps)
                   <div className="bg-gray-50 p-3 rounded border border-gray-200 text-xs font-mono">
                     {anomaly.details.traceIds.map((traceId, index) => (
                       <div key={index} className="mb-1 last:mb-0">
-                        {traceId}
+                        <a 
+                          href={`https://console.aws.amazon.com/xray/home?region=us-east-1#/traces/${traceId}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {traceId}
+                        </a>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-2 text-right">
+                    <a 
+                      href="https://console.aws.amazon.com/xray/home?region=us-east-1#/traces" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Open in X-Ray Traces →
+                    </a>
                   </div>
                 </div>
               )}

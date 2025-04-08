@@ -280,15 +280,59 @@ export default function AnomaliesPage() {
           <div>
             {aiService === 'sagemaker' ? (
               <>
-                <p className="font-medium">Powered by Amazon SageMaker</p>
+                <p className="font-medium">
+                  Powered by <a 
+                    href="https://aws.amazon.com/sagemaker/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="underline hover:text-blue-800"
+                  >
+                    Amazon SageMaker
+                  </a>
+                </p>
                 <p className="mt-1">
                   Anomaly detection is performed using machine learning models trained on your AWS resource data. 
                   The models continuously learn and adapt to your environment's patterns to provide accurate anomaly detection.
                 </p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <a 
+                    href="https://docs.aws.amazon.com/sagemaker/latest/dg/randomcutforest.html" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs underline hover:text-blue-800"
+                  >
+                    Random Cut Forest Algorithm
+                  </a>
+                  <a 
+                    href="https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-online-explainability.html" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs underline hover:text-blue-800"
+                  >
+                    SageMaker Clarify
+                  </a>
+                  <a 
+                    href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs underline hover:text-blue-800"
+                  >
+                    Model Monitoring
+                  </a>
+                </div>
               </>
             ) : (
               <>
-                <p className="font-medium">Powered by Amazon Bedrock - {bedrockModel.split('.')[1]}</p>
+                <p className="font-medium">
+                  Powered by <a 
+                    href="https://aws.amazon.com/bedrock/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="underline hover:text-purple-800"
+                  >
+                    Amazon Bedrock
+                  </a> - {bedrockModel.split('.')[1]}
+                </p>
                 <p className="mt-1">
                   Anomaly detection is enhanced with generative AI capabilities from Amazon Bedrock. 
                   This provides deeper insights including root cause analysis, detailed remediation steps, 
@@ -297,6 +341,32 @@ export default function AnomaliesPage() {
                 <p className="mt-2 text-xs">
                   <span className="font-medium">Current model:</span> {bedrockModel}
                 </p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <a 
+                    href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs underline hover:text-purple-800"
+                  >
+                    Bedrock Documentation
+                  </a>
+                  <a 
+                    href={`https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-${bedrockModel.includes('claude') ? 'claude' : 'titan'}.html`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs underline hover:text-purple-800"
+                  >
+                    {bedrockModel.split('.')[1]} Parameters
+                  </a>
+                  <a 
+                    href="https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs underline hover:text-purple-800"
+                  >
+                    Bedrock Agents
+                  </a>
+                </div>
               </>
             )}
           </div>
