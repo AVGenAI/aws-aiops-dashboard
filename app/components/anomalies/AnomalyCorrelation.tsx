@@ -8,7 +8,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   Cell
 } from 'recharts';
@@ -132,7 +131,6 @@ export default function AnomalyCorrelation({
                 className="dark:text-gray-400"
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend />
               <Bar 
                 dataKey="critical" 
                 name="Critical" 
