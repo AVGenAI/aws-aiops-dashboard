@@ -25,43 +25,17 @@ interface Anomaly {
 }
 
 type AiService = 'sagemaker' | 'bedrock';
-type BedrockModel = 
-  // Anthropic Claude models
-  | 'anthropic.claude-v2'
-  | 'anthropic.claude-v2:1'
-  | 'anthropic.claude-instant-v1'
-  | 'anthropic.claude-3-sonnet-20240229-v1:0'
-  | 'anthropic.claude-3-haiku-20240307-v1:0'
-  | 'anthropic.claude-3-opus-20240229-v1:0'
-  
-  // Amazon Titan models
-  | 'amazon.titan-text-express-v1'
-  | 'amazon.titan-text-lite-v1'
-  | 'amazon.titan-embed-text-v1'
-  | 'amazon.titan-embed-image-v1'
-  | 'amazon.titan-image-generator-v1'
-  
-  // AI21 Labs models
-  | 'ai21.j2-mid-v1'
-  | 'ai21.j2-ultra-v1'
-  | 'ai21.jamba-instruct-v1'
-  
-  // Cohere models
-  | 'cohere.command-text-v14'
-  | 'cohere.command-light-text-v14'
-  | 'cohere.embed-english-v3'
-  | 'cohere.embed-multilingual-v3'
-  
-  // Meta models
-  | 'meta.llama2-13b-chat-v1'
-  | 'meta.llama2-70b-chat-v1'
-  | 'meta.llama3-8b-instruct-v1:0'
-  | 'meta.llama3-70b-instruct-v1:0'
-  
-  // Stability AI models
-  | 'stability.stable-diffusion-xl-v1'
-  | 'stability.stable-image-core-v1:0'
-  | 'stability.stable-image-ultra-v1:0';
+// Define the type for Bedrock models
+type BedrockModel = string;
+
+// Interface for model provider info
+interface ModelProvider {
+  name: string;
+  models: {
+    id: string;
+    displayName: string;
+  }[];
+}
 
 export default function AnomaliesPage() {
   const { currentEnv } = useEnvironment();
@@ -71,6 +45,45 @@ export default function AnomaliesPage() {
   const [activeTab, setActiveTab] = useState<'logs' | 'metrics' | 'traces'>('logs');
   const [aiService, setAiService] = useState<AiService>('sagemaker');
   const [bedrockModel, setBedrockModel] = useState<BedrockModel>('anthropic.claude-v2');
+  const [modelProviders, setModelProviders] = useState<ModelProvider[]>([]);
+  const [loadingModels, setLoadingModels] = useState<boolean>(false);
+  
+  // Fetch available Bedrock models when the component mounts or aiService changes to Bedrock
+  useEffect(() => {
+    const fetchBedrockModels = async () => {
+      if (aiService !== 'bedrock') return;
+      
+      setLoadingModels(true);
+      
+      try {
+        const response = await fetch('/api/bedrock-models');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setModelProviders(data.providers || []);
+        
+        // If we get models and current selection is not in the list, select the first available model
+        if (data.providers && data.providers.length > 0) {
+          const allModels = data.providers.flatMap((p: ModelProvider) => p.models);
+          const modelExists = allModels.some((m: {id: string; displayName: string}) => m.id === bedrockModel);
+          
+          if (!modelExists && allModels.length > 0) {
+            setBedrockModel(allModels[0].id);
+          }
+        }
+      } catch (e: any) {
+        console.error('Error fetching Bedrock models:', e);
+        // We don't set the main error state here as this is not critical
+      } finally {
+        setLoadingModels(false);
+      }
+    };
+    
+    fetchBedrockModels();
+  }, [aiService]);
   
   // Fetch anomalies when the component mounts or when the environment, tab, or AI service changes
   useEffect(() => {
@@ -213,61 +226,85 @@ export default function AnomaliesPage() {
                 <label htmlFor="bedrockModel" className="block text-sm text-gray-700 mr-2">
                   Model:
                 </label>
-                <select
-                  id="bedrockModel"
-                  value={bedrockModel}
-                  onChange={(e) => setBedrockModel(e.target.value as BedrockModel)}
-                  className="block w-64 pl-3 pr-10 py-1 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
-                >
-                  {/* Anthropic Claude Models */}
-                  <optgroup label="Anthropic Claude Models">
-                    <option value="anthropic.claude-v2">Claude V2</option>
-                    <option value="anthropic.claude-v2:1">Claude V2:1</option>
-                    <option value="anthropic.claude-instant-v1">Claude Instant V1</option>
-                    <option value="anthropic.claude-3-sonnet-20240229-v1:0">Claude 3 Sonnet</option>
-                    <option value="anthropic.claude-3-haiku-20240307-v1:0">Claude 3 Haiku</option>
-                    <option value="anthropic.claude-3-opus-20240229-v1:0">Claude 3 Opus</option>
-                  </optgroup>
-                  
-                  {/* Amazon Titan Models */}
-                  <optgroup label="Amazon Titan Models">
-                    <option value="amazon.titan-text-express-v1">Titan Text Express</option>
-                    <option value="amazon.titan-text-lite-v1">Titan Text Lite</option>
-                    <option value="amazon.titan-embed-text-v1">Titan Embed Text</option>
-                    <option value="amazon.titan-embed-image-v1">Titan Embed Image</option>
-                    <option value="amazon.titan-image-generator-v1">Titan Image Generator</option>
-                  </optgroup>
-                  
-                  {/* AI21 Labs Models */}
-                  <optgroup label="AI21 Labs Models">
-                    <option value="ai21.j2-mid-v1">Jurassic-2 Mid</option>
-                    <option value="ai21.j2-ultra-v1">Jurassic-2 Ultra</option>
-                    <option value="ai21.jamba-instruct-v1">Jamba Instruct</option>
-                  </optgroup>
-                  
-                  {/* Cohere Models */}
-                  <optgroup label="Cohere Models">
-                    <option value="cohere.command-text-v14">Command Text</option>
-                    <option value="cohere.command-light-text-v14">Command Light Text</option>
-                    <option value="cohere.embed-english-v3">Embed English</option>
-                    <option value="cohere.embed-multilingual-v3">Embed Multilingual</option>
-                  </optgroup>
-                  
-                  {/* Meta Models */}
-                  <optgroup label="Meta Models">
-                    <option value="meta.llama2-13b-chat-v1">Llama 2 13B Chat</option>
-                    <option value="meta.llama2-70b-chat-v1">Llama 2 70B Chat</option>
-                    <option value="meta.llama3-8b-instruct-v1:0">Llama 3 8B Instruct</option>
-                    <option value="meta.llama3-70b-instruct-v1:0">Llama 3 70B Instruct</option>
-                  </optgroup>
-                  
-                  {/* Stability AI Models */}
-                  <optgroup label="Stability AI Models">
-                    <option value="stability.stable-diffusion-xl-v1">Stable Diffusion XL</option>
-                    <option value="stability.stable-image-core-v1:0">Stable Image Core</option>
-                    <option value="stability.stable-image-ultra-v1:0">Stable Image Ultra</option>
-                  </optgroup>
-                </select>
+                <div className="relative">
+                  {loadingModels && (
+                    <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+                      <div className="animate-spin h-4 w-4 border-t-2 border-b-2 border-blue-600 rounded-full"></div>
+                    </div>
+                  )}
+                  <select
+                    id="bedrockModel"
+                    value={bedrockModel}
+                    onChange={(e) => setBedrockModel(e.target.value as BedrockModel)}
+                    className="block w-64 pl-3 pr-10 py-1 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                    disabled={loadingModels}
+                  >
+                    {modelProviders.length > 0 ? (
+                      // Render dynamically fetched models
+                      modelProviders.map((provider) => (
+                        <optgroup key={provider.name} label={`${provider.name} Models`}>
+                          {provider.models.map((model) => (
+                            <option key={model.id} value={model.id}>
+                              {model.displayName}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))
+                    ) : (
+                      // Fallback to hardcoded models if API fails
+                      <>
+                        {/* Anthropic Claude Models */}
+                        <optgroup label="Anthropic Claude Models">
+                          <option value="anthropic.claude-v2">Claude V2</option>
+                          <option value="anthropic.claude-v2:1">Claude V2:1</option>
+                          <option value="anthropic.claude-instant-v1">Claude Instant V1</option>
+                          <option value="anthropic.claude-3-sonnet-20240229-v1:0">Claude 3 Sonnet</option>
+                          <option value="anthropic.claude-3-haiku-20240307-v1:0">Claude 3 Haiku</option>
+                          <option value="anthropic.claude-3-opus-20240229-v1:0">Claude 3 Opus</option>
+                        </optgroup>
+                        
+                        {/* Amazon Titan Models */}
+                        <optgroup label="Amazon Titan Models">
+                          <option value="amazon.titan-text-express-v1">Titan Text Express</option>
+                          <option value="amazon.titan-text-lite-v1">Titan Text Lite</option>
+                          <option value="amazon.titan-embed-text-v1">Titan Embed Text</option>
+                          <option value="amazon.titan-embed-image-v1">Titan Embed Image</option>
+                          <option value="amazon.titan-image-generator-v1">Titan Image Generator</option>
+                        </optgroup>
+                        
+                        {/* AI21 Labs Models */}
+                        <optgroup label="AI21 Labs Models">
+                          <option value="ai21.j2-mid-v1">Jurassic-2 Mid</option>
+                          <option value="ai21.j2-ultra-v1">Jurassic-2 Ultra</option>
+                          <option value="ai21.jamba-instruct-v1">Jamba Instruct</option>
+                        </optgroup>
+                        
+                        {/* Cohere Models */}
+                        <optgroup label="Cohere Models">
+                          <option value="cohere.command-text-v14">Command Text</option>
+                          <option value="cohere.command-light-text-v14">Command Light Text</option>
+                          <option value="cohere.embed-english-v3">Embed English</option>
+                          <option value="cohere.embed-multilingual-v3">Embed Multilingual</option>
+                        </optgroup>
+                        
+                        {/* Meta Models */}
+                        <optgroup label="Meta Models">
+                          <option value="meta.llama2-13b-chat-v1">Llama 2 13B Chat</option>
+                          <option value="meta.llama2-70b-chat-v1">Llama 2 70B Chat</option>
+                          <option value="meta.llama3-8b-instruct-v1:0">Llama 3 8B Instruct</option>
+                          <option value="meta.llama3-70b-instruct-v1:0">Llama 3 70B Instruct</option>
+                        </optgroup>
+                        
+                        {/* Stability AI Models */}
+                        <optgroup label="Stability AI Models">
+                          <option value="stability.stable-diffusion-xl-v1">Stable Diffusion XL</option>
+                          <option value="stability.stable-image-core-v1:0">Stable Image Core</option>
+                          <option value="stability.stable-image-ultra-v1:0">Stable Image Ultra</option>
+                        </optgroup>
+                      </>
+                    )}
+                  </select>
+                </div>
               </div>
             )}
           </div>
