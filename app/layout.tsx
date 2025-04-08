@@ -33,6 +33,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Link href="/anomalies" className="flex items-center rounded px-3 py-2 hover:bg-gray-700 hover:text-white">
               <Icon service="anomalies" className="mr-2" /> Anomaly Detection
             </Link>
+            <Link href="/predictive" className="flex items-center rounded px-3 py-2 hover:bg-gray-700 hover:text-white">
+              <Icon service="cloudwatch" className="mr-2" /> Predictive Analytics
+            </Link>
             <Link href="/cost-security" className="flex items-center rounded px-3 py-2 hover:bg-gray-700 hover:text-white">
               <Icon service="security" className="mr-2" /> Cost & Security
             </Link>
