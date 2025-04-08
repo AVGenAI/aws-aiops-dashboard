@@ -38,15 +38,7 @@ export default function TimeSeriesChart({
 }: TimeSeriesChartProps) {
   const [chartData, setChartData] = useState<TimeSeriesData[]>([]);
 
-  useEffect(() => {
-    // Format the data for the chart
-    const formattedData = data.map(item => ({
-      ...item,
-      timestamp: new Date(item.timestamp).toLocaleString(),
-    }));
-    
-    setChartData(formattedData);
-  }, [data]);
+  // Single useEffect to format data and add original timestamp
 
   const getStatusColor = (status?: 'Normal' | 'Warning' | 'Critical') => {
     switch (status) {
@@ -164,7 +156,6 @@ export default function TimeSeriesChart({
                 className="dark:text-gray-400"
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend />
               <Line
                 type="monotone"
                 dataKey="value"
