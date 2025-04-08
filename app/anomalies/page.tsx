@@ -159,86 +159,105 @@ export default function AnomaliesPage() {
   const [selectedAnomaly, setSelectedAnomaly] = useState<string | null>(null);
   const [showVisualizations, setShowVisualizations] = useState<boolean>(true);
   
-  // Mock data for time series chart
-  const mockTimeSeriesData = [
-    { timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), value: 25, status: 'Normal' as const },
-    { timestamp: new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString(), value: 28, status: 'Normal' as const },
-    { timestamp: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString(), value: 32, status: 'Normal' as const },
-    { timestamp: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(), value: 45, status: 'Normal' as const },
-    { timestamp: new Date(Date.now() - 16 * 60 * 60 * 1000).toISOString(), value: 60, status: 'Warning' as const },
-    { timestamp: new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString(), value: 75, status: 'Warning' as const },
-    { timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), value: 90, status: 'Critical' as const },
-    { timestamp: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(), value: 85, status: 'Critical' as const },
-    { timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), value: 70, status: 'Warning' as const },
-    { timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), value: 55, status: 'Warning' as const },
-    { timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), value: 40, status: 'Normal' as const },
-    { timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), value: 35, status: 'Normal' as const },
-    { timestamp: new Date().toISOString(), value: 30, status: 'Normal' as const },
-  ];
+  // State for visualization data
+  const [timeSeriesData, setTimeSeriesData] = useState<any[]>([]);
+  const [timeSeriesMetric, setTimeSeriesMetric] = useState<string>('CPU Utilization');
+  const [timeSeriesLoading, setTimeSeriesLoading] = useState<boolean>(false);
+  const [timeSeriesError, setTimeSeriesError] = useState<string | null>(null);
   
-  // Mock data for resource heatmap
-  const mockResourceData = [
-    { id: 'r1', name: 'API Gateway', type: 'API', x: 85, y: 40, z: 0.8, status: 'Critical' as const },
-    { id: 'r2', name: 'Lambda Function', type: 'Compute', x: 70, y: 90, z: 0.7, status: 'Critical' as const },
-    { id: 'r3', name: 'DynamoDB Table', type: 'Database', x: 30, y: 75, z: 0.6, status: 'Warning' as const },
-    { id: 'r4', name: 'EC2 Instance', type: 'Compute', x: 60, y: 50, z: 0.5, status: 'Warning' as const },
-    { id: 'r5', name: 'S3 Bucket', type: 'Storage', x: 20, y: 30, z: 0.3, status: 'Normal' as const },
-    { id: 'r6', name: 'CloudFront', type: 'CDN', x: 40, y: 20, z: 0.2, status: 'Normal' as const },
-    { id: 'r7', name: 'RDS Instance', type: 'Database', x: 50, y: 60, z: 0.4, status: 'Warning' as const },
-    { id: 'r8', name: 'ECS Cluster', type: 'Container', x: 75, y: 80, z: 0.9, status: 'Critical' as const },
-  ];
+  const [resourceData, setResourceData] = useState<any[]>([]);
+  const [resourceXMetric, setResourceXMetric] = useState<string>('CPU Utilization');
+  const [resourceYMetric, setResourceYMetric] = useState<string>('Memory Utilization');
+  const [resourceLoading, setResourceLoading] = useState<boolean>(false);
+  const [resourceError, setResourceError] = useState<string | null>(null);
   
-  // Mock data for anomaly correlation
-  const mockCorrelationData = [
-    { 
-      name: 'High CPU Usage', 
-      count: 12, 
-      critical: 5, 
-      warning: 4, 
-      normal: 3,
-      relatedTo: ['Memory Pressure', 'API Latency', 'Database Connections']
-    },
-    { 
-      name: 'Memory Pressure', 
-      count: 8, 
-      critical: 3, 
-      warning: 3, 
-      normal: 2,
-      relatedTo: ['High CPU Usage', 'Disk I/O']
-    },
-    { 
-      name: 'API Latency', 
-      count: 15, 
-      critical: 7, 
-      warning: 5, 
-      normal: 3,
-      relatedTo: ['High CPU Usage', 'Database Connections', 'Network Traffic']
-    },
-    { 
-      name: 'Database Connections', 
-      count: 10, 
-      critical: 4, 
-      warning: 4, 
-      normal: 2,
-      relatedTo: ['API Latency', 'High CPU Usage']
-    },
-    { 
-      name: 'Disk I/O', 
-      count: 6, 
-      critical: 2, 
-      warning: 2, 
-      normal: 2,
-      relatedTo: ['Memory Pressure', 'Database Connections']
-    },
-    { 
-      name: 'Network Traffic', 
-      count: 9, 
-      critical: 3, 
-      warning: 4, 
-      normal: 2,
-      relatedTo: ['API Latency', 'High CPU Usage']
-    },
-  ];
+  const [correlationData, setCorrelationData] = useState<any[]>([]);
+  const [correlationLoading, setCorrelationLoading] = useState<boolean>(false);
+  const [correlationError, setCorrelationError] = useState<string | null>(null);
+  
+  // Fetch time series data
+  const fetchTimeSeriesData = async () => {
+    setTimeSeriesLoading(true);
+    setTimeSeriesError(null);
+    
+    try {
+      const response = await fetch(`/api/anomalies/time-series?metric=${timeSeriesMetric}&timeRange=${timeRange}&environment=${currentEnv.id}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setTimeSeriesData(data.data || []);
+      setTimeSeriesMetric(data.metric);
+    } catch (e: any) {
+      console.error('Error fetching time series data:', e);
+      setTimeSeriesError(e.message || 'Failed to fetch time series data');
+    } finally {
+      setTimeSeriesLoading(false);
+    }
+  };
+  
+  // Fetch resource data
+  const fetchResourceData = async () => {
+    setResourceLoading(true);
+    setResourceError(null);
+    
+    try {
+      const response = await fetch(`/api/anomalies/resources?environment=${currentEnv.id}&xMetric=${resourceXMetric}&yMetric=${resourceYMetric}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setResourceData(data.resources || []);
+      setResourceXMetric(data.xMetric);
+      setResourceYMetric(data.yMetric);
+    } catch (e: any) {
+      console.error('Error fetching resource data:', e);
+      setResourceError(e.message || 'Failed to fetch resource data');
+    } finally {
+      setResourceLoading(false);
+    }
+  };
+  
+  // Fetch correlation data
+  const fetchCorrelationData = async () => {
+    setCorrelationLoading(true);
+    setCorrelationError(null);
+    
+    try {
+      const response = await fetch(`/api/anomalies/correlation?environment=${currentEnv.id}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setCorrelationData(data.correlations || []);
+    } catch (e: any) {
+      console.error('Error fetching correlation data:', e);
+      setCorrelationError(e.message || 'Failed to fetch correlation data');
+    } finally {
+      setCorrelationLoading(false);
+    }
+  };
+  
+  // Fetch visualization data when component mounts or when relevant parameters change
+  useEffect(() => {
+    if (showVisualizations) {
+      fetchTimeSeriesData();
+      fetchResourceData();
+      fetchCorrelationData();
+    }
+  }, [currentEnv.id, timeRange, showVisualizations]);
+  
+  // Handle time range change
+  const handleTimeRangeChange = (range: '1h' | '6h' | '1d' | '1w' | '1m') => {
+    setTimeRange(range);
+    fetchTimeSeriesData();
+  };
 
   return (
     <main className="p-8 bg-gray-50 min-h-full">
@@ -601,29 +620,87 @@ export default function AnomaliesPage() {
       {showVisualizations && (
         <div className="space-y-6">
           {/* Time Series Chart */}
-          <TimeSeriesChart
-            data={mockTimeSeriesData}
-            title="CPU Utilization Over Time"
-            metric="CPU Usage"
-            timeRange={timeRange}
-            onTimeRangeChange={setTimeRange}
-          />
-          
-          {/* Resource Heatmap */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ResourceHeatmap
-              data={mockResourceData}
-              title="Resource Utilization Heatmap"
-              xMetric="CPU Utilization"
-              yMetric="Memory Utilization"
+          {timeSeriesLoading ? (
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm h-64 flex items-center justify-center">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mb-2"></div>
+                <p className="text-gray-600">Loading time series data...</p>
+              </div>
+            </div>
+          ) : timeSeriesError ? (
+            <div className="bg-white p-4 rounded-lg border border-red-200 shadow-sm">
+              <p className="text-red-600">Error loading time series data: {timeSeriesError}</p>
+              <button
+                onClick={fetchTimeSeriesData}
+                className="mt-2 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <TimeSeriesChart
+              data={timeSeriesData}
+              title={`${timeSeriesMetric} Over Time`}
+              metric={timeSeriesMetric}
+              timeRange={timeRange}
+              onTimeRangeChange={handleTimeRangeChange}
             />
+          )}
+          
+          {/* Resource Heatmap and Anomaly Correlation */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Resource Heatmap */}
+            {resourceLoading ? (
+              <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm h-64 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mb-2"></div>
+                  <p className="text-gray-600">Loading resource data...</p>
+                </div>
+              </div>
+            ) : resourceError ? (
+              <div className="bg-white p-4 rounded-lg border border-red-200 shadow-sm">
+                <p className="text-red-600">Error loading resource data: {resourceError}</p>
+                <button
+                  onClick={fetchResourceData}
+                  className="mt-2 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <ResourceHeatmap
+                data={resourceData}
+                title="Resource Utilization Heatmap"
+                xMetric={resourceXMetric}
+                yMetric={resourceYMetric}
+              />
+            )}
             
             {/* Anomaly Correlation */}
-            <AnomalyCorrelation
-              data={mockCorrelationData}
-              title="Anomaly Type Correlation"
-              onSelectAnomaly={setSelectedAnomaly}
-            />
+            {correlationLoading ? (
+              <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm h-64 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mb-2"></div>
+                  <p className="text-gray-600">Loading correlation data...</p>
+                </div>
+              </div>
+            ) : correlationError ? (
+              <div className="bg-white p-4 rounded-lg border border-red-200 shadow-sm">
+                <p className="text-red-600">Error loading correlation data: {correlationError}</p>
+                <button
+                  onClick={fetchCorrelationData}
+                  className="mt-2 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <AnomalyCorrelation
+                data={correlationData}
+                title="Anomaly Type Correlation"
+                onSelectAnomaly={setSelectedAnomaly}
+              />
+            )}
           </div>
         </div>
       )}
