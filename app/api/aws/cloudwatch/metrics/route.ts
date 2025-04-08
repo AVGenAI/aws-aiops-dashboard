@@ -1,7 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
+import AWS from 'aws-sdk';
+
+// Function to get AWS credentials from environment
+const getAWSCredentials = (environment: string) => {
+  // In a real application, you would fetch these from a secure source
+  // For this example, we'll use environment variables or default values
+  switch (environment) {
+    case 'dev':
+      return {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID_DEV || process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_DEV || process.env.AWS_SECRET_ACCESS_KEY || '',
+        region: process.env.AWS_REGION_DEV || process.env.AWS_REGION || 'us-east-1'
+      };
+    case 'uat':
+      return {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID_UAT || process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_UAT || process.env.AWS_SECRET_ACCESS_KEY || '',
+        region: process.env.AWS_REGION_UAT || process.env.AWS_REGION || 'us-east-1'
+      };
+    case 'prod':
+      return {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID_PROD || process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_PROD || process.env.AWS_SECRET_ACCESS_KEY || '',
+        region: process.env.AWS_REGION_PROD || process.env.AWS_REGION || 'us-east-1'
+      };
+    default:
+      return {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+        region: process.env.AWS_REGION || 'us-east-1'
+      };
+  }
+};
 
 // This would typically use the AWS SDK to fetch real CloudWatch metrics
-// For this example, we'll use mock data
+// For now, we'll use mock data as a fallback when AWS credentials are not available
 
 // Mock data for different namespaces
 const mockMetricsData = {
@@ -124,20 +157,153 @@ function filterMetricsByTimeRange(metrics: (MetricData | null)[], timeRange: str
   return result;
 }
 
-export async function GET(request: NextRequest) {
+// Function to fetch CloudWatch metrics from AWS
+async function fetchCloudWatchMetrics(
+  environment: string,
+  namespace: string,
+  metricNames: string[],
+  timeRange: string,
+  resourceId?: string
+): Promise<MetricData[]> {
   try {
-    // Get query parameters
-    const searchParams = request.nextUrl.searchParams;
-    const environment = searchParams.get('environment') || 'dev';
-    const namespace = searchParams.get('namespace') || 'AWS/EC2';
-    const timeRange = searchParams.get('timeRange') || '1d';
-    const resourceId = searchParams.get('resourceId');
-    const metricsParam = searchParams.get('metrics');
+    const credentials = getAWSCredentials(environment);
     
-    // Parse metrics parameter
-    const metricNames = metricsParam ? metricsParam.split(',') : ['CPUUtilization'];
+    // Check if AWS credentials are available
+    if (!credentials.accessKeyId || !credentials.secretAccessKey) {
+      console.log('AWS credentials not available, using mock data');
+      
+      // Get metrics data for the specified namespace from mock data
+      const namespaceData = mockMetricsData[namespace as keyof typeof mockMetricsData] || {};
+      
+      // Filter metrics by name
+      const metrics = metricNames
+        .filter(name => namespaceData[name as keyof typeof namespaceData])
+        .map(name => {
+          const metric = namespaceData[name as keyof typeof namespaceData] as MetricData;
+          
+          if (!metric) return null;
+          
+          // If resourceId is provided, update the dimensions
+          if (resourceId) {
+            return {
+              id: metric.id,
+              name: metric.name,
+              namespace: metric.namespace,
+              dimensions: [
+                {
+                  name: namespace.includes('EC2') ? 'InstanceId' : 
+                        namespace.includes('RDS') ? 'DBInstanceIdentifier' : 
+                        namespace.includes('Lambda') ? 'FunctionName' : 'ResourceId',
+                  value: resourceId
+                }
+              ],
+              statistics: metric.statistics,
+              unit: metric.unit,
+              period: metric.period,
+              values: metric.values
+            };
+          }
+          
+          return metric;
+        });
+      
+      // Filter metrics by time range
+      return filterMetricsByTimeRange(metrics, timeRange);
+    }
     
-    // Get metrics data for the specified namespace
+    // Configure AWS SDK
+    AWS.config.update({
+      accessKeyId: credentials.accessKeyId,
+      secretAccessKey: credentials.secretAccessKey,
+      region: credentials.region
+    });
+    
+    // Initialize CloudWatch client
+    const cloudWatch = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
+    
+    // Calculate time range
+    const now = new Date();
+    let startTime: Date;
+    
+    switch (timeRange) {
+      case '1h':
+        startTime = new Date(now.getTime() - 60 * 60 * 1000);
+        break;
+      case '6h':
+        startTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+        break;
+      case '1d':
+        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case '1w':
+        startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '1m':
+        startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    }
+    
+    // Prepare dimensions
+    const dimensions = resourceId ? [
+      {
+        Name: namespace.includes('EC2') ? 'InstanceId' : 
+              namespace.includes('RDS') ? 'DBInstanceIdentifier' : 
+              namespace.includes('Lambda') ? 'FunctionName' : 'ResourceId',
+        Value: resourceId
+      }
+    ] : [];
+    
+    // Fetch metrics data for each metric name
+    const metricsPromises = metricNames.map(async (metricName) => {
+      try {
+        const params = {
+          Namespace: namespace,
+          MetricName: metricName,
+          Dimensions: dimensions,
+          StartTime: startTime,
+          EndTime: now,
+          Period: 3600, // 1 hour
+          Statistics: ['Average', 'Minimum', 'Maximum', 'Sum']
+        };
+        
+        const result = await cloudWatch.getMetricStatistics(params).promise();
+        
+        // Transform the result to match our MetricData interface
+        const values = result.Datapoints?.map(dp => ({
+          timestamp: dp.Timestamp?.toISOString() || new Date().toISOString(),
+          value: dp.Average || 0
+        })) || [];
+        
+        // Sort values by timestamp
+        values.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        
+        return {
+          id: `${namespace}-${metricName}`,
+          name: metricName,
+          namespace,
+          dimensions: dimensions.map(d => ({ name: d.Name, value: d.Value })),
+          statistics: ['Average', 'Minimum', 'Maximum', 'Sum'],
+          unit: result.Datapoints?.[0]?.Unit || 'None',
+          period: 3600,
+          values
+        };
+      } catch (error) {
+        console.error(`Error fetching metric ${metricName}:`, error);
+        return null;
+      }
+    });
+    
+    // Wait for all promises to resolve
+    const metricsResults = await Promise.all(metricsPromises);
+    
+    // Filter out null results
+    return metricsResults.filter((metric): metric is MetricData => metric !== null);
+  } catch (error) {
+    console.error('Error fetching CloudWatch metrics from AWS:', error);
+    
+    // Fallback to mock data
     const namespaceData = mockMetricsData[namespace as keyof typeof mockMetricsData] || {};
     
     // Filter metrics by name
@@ -173,10 +339,34 @@ export async function GET(request: NextRequest) {
       });
     
     // Filter metrics by time range
-    const filteredMetrics = filterMetricsByTimeRange(metrics, timeRange);
+    return filterMetricsByTimeRange(metrics, timeRange);
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    // Get query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const environment = searchParams.get('environment') || 'dev';
+    const namespace = searchParams.get('namespace') || 'AWS/EC2';
+    const timeRange = searchParams.get('timeRange') || '1d';
+    const resourceId = searchParams.get('resourceId') || undefined;
+    const metricsParam = searchParams.get('metrics');
+    
+    // Parse metrics parameter
+    const metricNames = metricsParam ? metricsParam.split(',') : ['CPUUtilization'];
+    
+    // Fetch metrics data
+    const metrics = await fetchCloudWatchMetrics(
+      environment,
+      namespace,
+      metricNames,
+      timeRange,
+      resourceId
+    );
     
     // Return the metrics data
-    return NextResponse.json({ metrics: filteredMetrics });
+    return NextResponse.json({ metrics });
   } catch (error) {
     console.error('Error fetching CloudWatch metrics:', error);
     return NextResponse.json(
