@@ -32,19 +32,19 @@ export default function EnvironmentSelector() {
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center space-x-1 text-sm px-3 py-1 rounded border transition-colors duration-300 ${
           isChanging 
-            ? 'bg-blue-100 text-blue-700 border-blue-300' 
-            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+            ? 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700' 
+            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
         }`}
       >
         <span>{currentEnv.name}</span>
-        <span className="text-xs text-gray-500">({currentEnv.region})</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400">({currentEnv.region})</span>
         <span className="ml-1">{isOpen ? '▲' : '▼'}</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-10 w-64">
-          <div className="p-2 border-b border-gray-200 bg-gray-50">
-            <h3 className="text-xs font-semibold text-gray-700">Select Environment</h3>
+        <div className="absolute right-0 mt-1 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded shadow-lg z-10 w-64">
+          <div className="p-2 border-b border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-gray-800">
+            <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">Select Environment</h3>
           </div>
           <div className="p-2">
             {environments.map(env => (
@@ -58,8 +58,8 @@ export default function EnvironmentSelector() {
                   className="mr-2"
                 />
                 <label htmlFor={`env-${env.id}`} className="flex flex-col cursor-pointer">
-                  <span className="text-sm">{env.name}</span>
-                  <span className="text-xs text-gray-500">{env.region}</span>
+                  <span className="text-sm dark:text-gray-200">{env.name}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{env.region}</span>
                 </label>
               </div>
             ))}

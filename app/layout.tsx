@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import Icon from './components/Icon';
 import EnvironmentSelector from './components/EnvironmentSelector';
 import { EnvironmentProvider } from './context/EnvironmentContext';
+import { ThemeProvider } from './context/ThemeContext';
+import ThemeToggle from './components/ThemeToggle';
 
 export const metadata = {
   title: 'AWS TGSAIOps Dashboard',
@@ -12,9 +14,10 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body className="flex min-h-screen font-sans text-sm">
+    <html lang="en" className="light">
+      <body className="flex min-h-screen font-sans text-sm dark:bg-dark-bg dark:text-dark-text">
         <EnvironmentProvider>
+          <ThemeProvider>
         {/* Sidebar */}
         <aside className="w-64 bg-gray-900 text-gray-300 flex flex-col">
           <div className="p-4 border-b border-gray-700">
@@ -69,20 +72,22 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="bg-white border-b border-gray-300 p-3 flex justify-between items-center shadow-sm">
+          <header className="bg-white dark:bg-dark-card border-b border-gray-300 dark:border-dark-border p-3 flex justify-between items-center shadow-sm">
             <div className="flex items-center">
               {/* Placeholder for Search */}
-              <input type="text" placeholder="Search..." className="border border-gray-300 rounded px-3 py-1 text-sm mr-4" />
+              <input type="text" placeholder="Search..." className="border border-gray-300 dark:border-dark-border dark:bg-dark-card dark:text-dark-text rounded px-3 py-1 text-sm mr-4" />
             </div>
             <div className="flex items-center space-x-4">
               <EnvironmentSelector />
+              <ThemeToggle />
               {/* Placeholder for User Menu */}
-              <button className="text-sm text-gray-700">admin@example.com ▼</button>
+              <button className="text-sm text-gray-700 dark:text-dark-text">admin@example.com ▼</button>
             </div>
           </header>
           {/* Page Content */}
-          <main className="flex-1 p-6 bg-gray-100 overflow-y-auto">{children}</main>
+          <main className="flex-1 p-6 bg-gray-100 dark:bg-dark-bg overflow-y-auto">{children}</main>
         </div>
+          </ThemeProvider>
         </EnvironmentProvider>
       </body>
     </html>
