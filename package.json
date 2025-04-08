@@ -18,7 +18,8 @@
     "@aws-sdk/client-securityhub": "^3.782.0",
     "next": "15.2.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "recharts": "^2.15.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useEnvironment } from '../context/EnvironmentContext';
 import AnomalyDetail from '../components/anomalies/AnomalyDetail';
+import TimeSeriesChart from '../components/anomalies/TimeSeriesChart';
+import ResourceHeatmap from '../components/anomalies/ResourceHeatmap';
+import AnomalyCorrelation from '../components/anomalies/AnomalyCorrelation';
 
 interface Anomaly {
   id: string;
@@ -150,6 +153,92 @@ export default function AnomaliesPage() {
   const criticalCount = anomalies.filter(a => a.status === 'Critical').length;
   const warningCount = anomalies.filter(a => a.status === 'Warning').length;
   const normalCount = anomalies.filter(a => a.status === 'Normal').length;
+
+  // State for visualizations
+  const [timeRange, setTimeRange] = useState<'1h' | '6h' | '1d' | '1w' | '1m'>('1d');
+  const [selectedAnomaly, setSelectedAnomaly] = useState<string | null>(null);
+  const [showVisualizations, setShowVisualizations] = useState<boolean>(true);
+  
+  // Mock data for time series chart
+  const mockTimeSeriesData = [
+    { timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), value: 25, status: 'Normal' as const },
+    { timestamp: new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString(), value: 28, status: 'Normal' as const },
+    { timestamp: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString(), value: 32, status: 'Normal' as const },
+    { timestamp: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(), value: 45, status: 'Normal' as const },
+    { timestamp: new Date(Date.now() - 16 * 60 * 60 * 1000).toISOString(), value: 60, status: 'Warning' as const },
+    { timestamp: new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString(), value: 75, status: 'Warning' as const },
+    { timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), value: 90, status: 'Critical' as const },
+    { timestamp: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(), value: 85, status: 'Critical' as const },
+    { timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), value: 70, status: 'Warning' as const },
+    { timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), value: 55, status: 'Warning' as const },
+    { timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), value: 40, status: 'Normal' as const },
+    { timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), value: 35, status: 'Normal' as const },
+    { timestamp: new Date().toISOString(), value: 30, status: 'Normal' as const },
+  ];
+  
+  // Mock data for resource heatmap
+  const mockResourceData = [
+    { id: 'r1', name: 'API Gateway', type: 'API', x: 85, y: 40, z: 0.8, status: 'Critical' as const },
+    { id: 'r2', name: 'Lambda Function', type: 'Compute', x: 70, y: 90, z: 0.7, status: 'Critical' as const },
+    { id: 'r3', name: 'DynamoDB Table', type: 'Database', x: 30, y: 75, z: 0.6, status: 'Warning' as const },
+    { id: 'r4', name: 'EC2 Instance', type: 'Compute', x: 60, y: 50, z: 0.5, status: 'Warning' as const },
+    { id: 'r5', name: 'S3 Bucket', type: 'Storage', x: 20, y: 30, z: 0.3, status: 'Normal' as const },
+    { id: 'r6', name: 'CloudFront', type: 'CDN', x: 40, y: 20, z: 0.2, status: 'Normal' as const },
+    { id: 'r7', name: 'RDS Instance', type: 'Database', x: 50, y: 60, z: 0.4, status: 'Warning' as const },
+    { id: 'r8', name: 'ECS Cluster', type: 'Container', x: 75, y: 80, z: 0.9, status: 'Critical' as const },
+  ];
+  
+  // Mock data for anomaly correlation
+  const mockCorrelationData = [
+    { 
+      name: 'High CPU Usage', 
+      count: 12, 
+      critical: 5, 
+      warning: 4, 
+      normal: 3,
+      relatedTo: ['Memory Pressure', 'API Latency', 'Database Connections']
+    },
+    { 
+      name: 'Memory Pressure', 
+      count: 8, 
+      critical: 3, 
+      warning: 3, 
+      normal: 2,
+      relatedTo: ['High CPU Usage', 'Disk I/O']
+    },
+    { 
+      name: 'API Latency', 
+      count: 15, 
+      critical: 7, 
+      warning: 5, 
+      normal: 3,
+      relatedTo: ['High CPU Usage', 'Database Connections', 'Network Traffic']
+    },
+    { 
+      name: 'Database Connections', 
+      count: 10, 
+      critical: 4, 
+      warning: 4, 
+      normal: 2,
+      relatedTo: ['API Latency', 'High CPU Usage']
+    },
+    { 
+      name: 'Disk I/O', 
+      count: 6, 
+      critical: 2, 
+      warning: 2, 
+      normal: 2,
+      relatedTo: ['Memory Pressure', 'Database Connections']
+    },
+    { 
+      name: 'Network Traffic', 
+      count: 9, 
+      critical: 3, 
+      warning: 4, 
+      normal: 2,
+      relatedTo: ['API Latency', 'High CPU Usage']
+    },
+  ];
 
   return (
     <main className="p-8 bg-gray-50 min-h-full">
@@ -497,6 +586,47 @@ export default function AnomaliesPage() {
           </div>
         </div>
       </div>
+      
+      {/* Visualizations Toggle */}
+      <div className="flex justify-between items-center mt-8 mb-4">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-dark-text">Advanced Visualizations</h2>
+        <button
+          onClick={() => setShowVisualizations(!showVisualizations)}
+          className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800"
+        >
+          {showVisualizations ? 'Hide Visualizations' : 'Show Visualizations'}
+        </button>
+      </div>
+      
+      {showVisualizations && (
+        <div className="space-y-6">
+          {/* Time Series Chart */}
+          <TimeSeriesChart
+            data={mockTimeSeriesData}
+            title="CPU Utilization Over Time"
+            metric="CPU Usage"
+            timeRange={timeRange}
+            onTimeRangeChange={setTimeRange}
+          />
+          
+          {/* Resource Heatmap */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ResourceHeatmap
+              data={mockResourceData}
+              title="Resource Utilization Heatmap"
+              xMetric="CPU Utilization"
+              yMetric="Memory Utilization"
+            />
+            
+            {/* Anomaly Correlation */}
+            <AnomalyCorrelation
+              data={mockCorrelationData}
+              title="Anomaly Type Correlation"
+              onSelectAnomaly={setSelectedAnomaly}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
