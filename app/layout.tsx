@@ -6,8 +6,8 @@ import EnvironmentSelector from './components/EnvironmentSelector';
 import { EnvironmentProvider } from './context/EnvironmentContext';
 
 export const metadata = {
-  title: 'AWS AIOps Dashboard',
-  description: 'Manage and monitor your AWS environment with AIOps capabilities',
+  title: 'AWS TGSAIOps Dashboard',
+  description: 'Manage and monitor your AWS environment with TGSAIOps capabilities',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {/* Sidebar */}
         <aside className="w-64 bg-gray-900 text-gray-300 flex flex-col">
           <div className="p-4 border-b border-gray-700">
-            <h2 className="text-xl font-bold text-white">AIOps Dashboard</h2>
+            <h2 className="text-xl font-bold text-white">TGSAIOps Dashboard</h2>
           </div>
           <nav className="flex-1 p-2 space-y-1">
             <Link href="/dashboard" className="flex items-center rounded px-3 py-2 hover:bg-gray-700 hover:text-white">

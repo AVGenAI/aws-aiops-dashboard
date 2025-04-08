@@ -1,6 +1,6 @@
-# AWS AIOps Dashboard
+# AWS TGSAIOps Dashboard
 
-A comprehensive dashboard for managing AWS resources with AIOps capabilities.
+A comprehensive dashboard for managing AWS resources with TGSAIOps capabilities.
 
 ## Overview
 
