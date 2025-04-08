@@ -1,6 +1,14 @@
-AWS TGSAIOps Dashboard - Version 1.0.0
+AWS TGSAIOps Dashboard - Version 2.0.0
 
-Release Date: April 7, 2025
+Release Date: April 8, 2025
+
+New in Version 2.0.0:
+- Export and reporting features for all visualization components
+- Support for multiple export formats (JSON, CSV, PDF)
+- PDF generation with proper formatting and styling
+- Export panel with dropdown menu for easy format selection
+- Loading states during export operations
+- Error handling for export operations
 
 Features:
 - Complete AWS Console-like experience with multiple pages and tabs
@@ -18,12 +26,16 @@ Features:
 - Trusted Advisor with environment-specific recommendations
 - Health Dashboard showing service status and health events
 - Settings page with AWS credentials, notifications, and preferences
+- Advanced visualizations for anomaly detection with export capabilities
+- Dark mode support for better visibility in different lighting conditions
 
 Components:
 - Icon system for AWS services
 - Modal system for forms and dialogs
 - Environment context for global state management
 - API endpoints for dynamic data based on selected environment
+- Export components for data export in multiple formats
+- PDF generation API endpoint
 
 Pages:
 - Dashboard
@@ -40,4 +52,4 @@ Pages:
 - User Management
 - Settings
 
-This version serves as the foundation for the AWS AIOps Dashboard, providing a comprehensive interface for managing AWS resources across multiple environments.
+This version enhances the AWS AIOps Dashboard with export and reporting capabilities, allowing users to save visualization data for offline analysis, generate reports for sharing with team members, and perform further analysis in other tools.
