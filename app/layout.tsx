@@ -39,6 +39,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Link href="/automation" className="flex items-center rounded px-3 py-2 hover:bg-gray-700 hover:text-white">
               <Icon service="automation" className="mr-2" /> Automation
             </Link>
+            <Link href="/bedrock-studio" className="flex items-center rounded px-3 py-2 hover:bg-gray-700 hover:text-white">
+              <Icon service="bedrock" className="mr-2" /> Bedrock Studio
+            </Link>
             <Link href="/explore" className="flex items-center rounded px-3 py-2 hover:bg-gray-700 hover:text-white">
               <Icon service="discover" className="mr-2" /> Explore AWS
             </Link>

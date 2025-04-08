@@ -25,6 +25,7 @@ export default function Icon({ service, className = '' }: IconProps) {
       case 'stacks': return 'bg-pink-600';
       case 'anomalies': return 'bg-yellow-600';
       case 'automation': return 'bg-green-600';
+      case 'bedrock': return 'bg-purple-700';
       default: return 'bg-gray-600';
     }
   };
@@ -150,6 +151,15 @@ export default function Icon({ service, className = '' }: IconProps) {
         return (
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
             <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"></path>
+          </svg>
+        );
+      case 'bedrock':
+        return (
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+            <circle cx="12" cy="12" r="3"></circle>
           </svg>
         );
       default:
