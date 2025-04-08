@@ -1,0 +1,112 @@
+# AWS AIOps Dashboard Architecture Diagram
+
+## Components to Include in Draw.io
+
+### 1. Client Layer
+- Web Browser (User Interface)
+
+### 2. Frontend Layer (Next.js)
+- UI Components
+  - ModelSelector
+  - PromptBuilder
+  - TimeSeriesChart
+  - AnomalyCorrelation
+  - RCADisplay
+  - PredictiveChart
+  - CloudWatchMetrics
+  - ExportPanel
+- Next.js Pages
+  - Dashboard
+  - Anomalies
+  - Predictive
+  - Bedrock Studio
+  - AWS Services
+  - Cost & Security
+- Context Providers
+  - EnvironmentProvider (Dev/UAT/Prod)
+
+### 3. Backend Layer (Next.js API Routes)
+- API Routes
+  - /api/bedrock/generate
+  - /api/bedrock/models
+  - /api/bedrock/prompt-templates
+  - /api/bedrock/prompt-history
+  - /api/anomalies/rca
+  - /api/predict/metrics
+  - /api/aws/cloudwatch/metrics
+
+### 4. AWS Integration Layer
+- AWS SDK
+- Credential Management
+- Mock Data Generators
+
+### 5. AWS Services
+- Amazon Bedrock
+- Amazon CloudWatch
+- Amazon SageMaker
+- AWS EC2
+- AWS RDS
+- AWS SecurityHub
+- AWS Cost Explorer
+- AWS CloudFormation
+
+## Connections
+
+1. Client Layer → Frontend Layer
+   - Browser connects to Next.js Frontend
+
+2. Frontend Layer → Backend Layer
+   - UI Components and Pages make API calls to Next.js API Routes
+
+3. Backend Layer → AWS Integration Layer
+   - API Routes use AWS SDK for service integration
+   - Credential Management provides environment-specific AWS credentials
+   - Mock Data Generators provide fallback when AWS credentials aren't available
+
+4. AWS Integration Layer → AWS Services
+   - AWS SDK connects to various AWS services
+
+## Feature-Specific Flows
+
+1. Anomaly Detection & Root Cause Analysis
+   - Frontend: TimeSeriesChart, AnomalyCorrelation, RCADisplay
+   - Backend: /api/anomalies/rca
+   - AWS: CloudWatch (metrics), Bedrock (AI analysis)
+
+2. Predictive Analytics
+   - Frontend: PredictiveChart
+   - Backend: /api/predict/metrics
+   - AWS: CloudWatch (historical data), SageMaker (predictions)
+
+3. Bedrock Studio
+   - Frontend: ModelSelector, PromptBuilder
+   - Backend: /api/bedrock/generate, /api/bedrock/models
+   - AWS: Bedrock (AI models)
+
+4. AWS Services Dashboard
+   - Frontend: CloudWatchMetrics
+   - Backend: /api/aws/cloudwatch/metrics
+   - AWS: CloudWatch (metrics)
+
+## Data Flow
+
+1. User selects environment (Dev/UAT/Prod) in the UI
+2. Environment context is used throughout the application
+3. API requests include the selected environment
+4. Backend retrieves environment-specific AWS credentials
+5. If credentials are available, AWS services are called
+6. If credentials are not available, mock data is generated
+7. Response data is processed and returned to the frontend
+8. Frontend renders the data in the appropriate components
+
+## Styling Recommendations
+
+- Use AWS Architecture Icons for AWS services
+- Color code different layers:
+  - Client Layer: Light Blue
+  - Frontend Layer: Light Green
+  - Backend Layer: Light Orange
+  - AWS Integration Layer: Light Yellow
+  - AWS Services: Light Red
+- Use directional arrows to show data flow
+- Group related components together
