@@ -25,6 +25,7 @@ interface TimeSeriesChartProps {
   metric: string;
   timeRange: '1h' | '6h' | '1d' | '1w' | '1m';
   onTimeRangeChange?: (range: '1h' | '6h' | '1d' | '1w' | '1m') => void;
+  onAnalyzeRCA?: (anomalyDetails: { timestamp: string; value: number; metric: string; status: 'Critical' | 'Warning' }) => void;
 }
 
 export default function TimeSeriesChart({ 
@@ -32,7 +33,8 @@ export default function TimeSeriesChart({
   title, 
   metric, 
   timeRange, 
-  onTimeRangeChange 
+  onTimeRangeChange,
+  onAnalyzeRCA
 }: TimeSeriesChartProps) {
   const [chartData, setChartData] = useState<TimeSeriesData[]>([]);
 
@@ -89,11 +91,34 @@ export default function TimeSeriesChart({
               Status: {dataPoint.status}
             </p>
           )}
+          {dataPoint.status && (dataPoint.status === 'Critical' || dataPoint.status === 'Warning') && onAnalyzeRCA && (
+            <button
+              onClick={() => onAnalyzeRCA({ 
+                timestamp: dataPoint.originalTimestamp || label, // Use original timestamp if available
+                value: dataPoint.value, 
+                metric: metric, 
+                status: dataPoint.status 
+              })}
+              className="mt-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Analyze Root Cause
+            </button>
+          )}
         </div>
       );
     }
     return null;
   };
+
+  // Add original timestamp to data for RCA analysis
+  useEffect(() => {
+    const formattedData = data.map(item => ({
+      ...item,
+      originalTimestamp: item.timestamp, // Keep original ISO string
+      timestamp: new Date(item.timestamp).toLocaleString(),
+    }));
+    setChartData(formattedData);
+  }, [data]);
 
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm dark:bg-dark-card dark:border-dark-border">

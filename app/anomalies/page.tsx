@@ -6,6 +6,7 @@ import AnomalyDetail from '../components/anomalies/AnomalyDetail';
 import TimeSeriesChart from '../components/anomalies/TimeSeriesChart';
 import ResourceHeatmap from '../components/anomalies/ResourceHeatmap';
 import AnomalyCorrelation from '../components/anomalies/AnomalyCorrelation';
+import RCADisplay from '../components/anomalies/RCADisplay'; // Assuming we create this component later
 
 interface Anomaly {
   id: string;
@@ -25,6 +26,27 @@ interface Anomaly {
   };
   enabled: boolean;
   model?: string; // Optional field for Bedrock models
+  resourceId?: string; // Add resourceId if available
+}
+
+// Define type for RCA trigger details
+interface AnomalyRCADetails {
+  timestamp: string;
+  value: number;
+  metric: string;
+  status: 'Critical' | 'Warning';
+  resourceId?: string; // Include resourceId if available
+}
+
+// Define type for RCA result
+interface RCAResult {
+  isLoading: boolean;
+  error: string | null;
+  analysis: {
+    rootCause: string;
+    evidence: string[];
+    suggestions: string[];
+  } | null;
 }
 
 type AiService = 'sagemaker' | 'bedrock';
@@ -174,7 +196,11 @@ export default function AnomaliesPage() {
   const [correlationData, setCorrelationData] = useState<any[]>([]);
   const [correlationLoading, setCorrelationLoading] = useState<boolean>(false);
   const [correlationError, setCorrelationError] = useState<string | null>(null);
-  
+
+  // State for RCA
+  const [selectedAnomalyForRCA, setSelectedAnomalyForRCA] = useState<AnomalyRCADetails | null>(null);
+  const [rcaResult, setRcaResult] = useState<RCAResult>({ isLoading: false, error: null, analysis: null });
+
   // Fetch time series data
   const fetchTimeSeriesData = async () => {
     setTimeSeriesLoading(true);
@@ -257,6 +283,38 @@ export default function AnomaliesPage() {
   const handleTimeRangeChange = (range: '1h' | '6h' | '1d' | '1w' | '1m') => {
     setTimeRange(range);
     fetchTimeSeriesData();
+  };
+
+  // Handle RCA trigger
+  const handleAnalyzeRCA = async (anomalyDetails: AnomalyRCADetails) => {
+    console.log('Analyze Root Cause triggered for:', anomalyDetails);
+    setSelectedAnomalyForRCA(anomalyDetails);
+    setRcaResult({ isLoading: true, error: null, analysis: null });
+
+    try {
+      const response = await fetch('/api/anomalies/rca', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...anomalyDetails,
+          environment: currentEnv.id, // Pass the current environment
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setRcaResult({ isLoading: false, error: null, analysis: result.analysis });
+
+    } catch (e: any) {
+      console.error('Error fetching RCA:', e);
+      setRcaResult({ isLoading: false, error: e.message || 'Failed to fetch Root Cause Analysis', analysis: null });
+    }
   };
 
   return (
@@ -644,6 +702,16 @@ export default function AnomaliesPage() {
               metric={timeSeriesMetric}
               timeRange={timeRange}
               onTimeRangeChange={handleTimeRangeChange}
+              onAnalyzeRCA={handleAnalyzeRCA} // Pass the handler down
+            />
+          )}
+
+          {/* RCA Display Area */}
+          {selectedAnomalyForRCA && (
+            <RCADisplay 
+              anomalyDetails={selectedAnomalyForRCA}
+              rcaResult={rcaResult}
+              onClose={() => setSelectedAnomalyForRCA(null)} // Add a way to close the display
             />
           )}
           
