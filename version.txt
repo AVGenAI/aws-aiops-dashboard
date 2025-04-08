@@ -1,6 +1,6 @@
-AWS TGSAIOps Dashboard - Version 1.0.0
+AWS TGSAIOps Dashboard - Version 3.0.0
 
-Release Date: April 7, 2025
+Release Date: April 8, 2025
 
 Features:
 - Complete AWS Console-like experience with multiple pages and tabs
@@ -18,12 +18,16 @@ Features:
 - Trusted Advisor with environment-specific recommendations
 - Health Dashboard showing service status and health events
 - Settings page with AWS credentials, notifications, and preferences
+- Bedrock Studio for interacting with Amazon Bedrock models
+- AWS Services dashboard for monitoring CloudWatch metrics
 
 Components:
 - Icon system for AWS services
 - Modal system for forms and dialogs
 - Environment context for global state management
 - API endpoints for dynamic data based on selected environment
+- Bedrock model selector and prompt builder
+- CloudWatch metrics visualization
 
 Pages:
 - Dashboard
@@ -32,6 +36,8 @@ Pages:
 - Anomaly Detection
 - Cost & Security
 - Automation
+- AWS Services
+- Bedrock Studio
 - Explore AWS
 - Solutions
 - AWS Blog
