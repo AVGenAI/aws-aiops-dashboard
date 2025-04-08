@@ -15,8 +15,12 @@ interface AnomalyDetailProps {
       affectedMetrics?: string[];
       logPatterns?: string[];
       traceIds?: string[];
+      rootCause?: string;
+      remediation?: string[];
+      llmAnalysis?: string;
     };
     enabled: boolean;
+    model?: string; // Optional field for Bedrock models
   };
   onToggle: (id: string, enabled: boolean) => void;
 }
@@ -158,17 +162,57 @@ export default function AnomalyDetail({ anomaly, onToggle }: AnomalyDetailProps)
                 </div>
               )}
               
-              <div className="mt-3">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Actions</h4>
-                <ul className="list-disc list-inside text-xs text-gray-600 space-y-1">
-                  <li>Investigate the {anomaly.resourceType} for the affected resource</li>
-                  <li>Check recent deployments or configuration changes</li>
-                  <li>Review related resources for similar patterns</li>
-                  {anomaly.status === 'Critical' && (
-                    <li className="text-red-600 font-medium">Consider immediate remediation</li>
-                  )}
-                </ul>
-              </div>
+              {/* Root Cause Analysis (Bedrock) */}
+              {anomaly.details.rootCause && (
+                <div className="mb-3">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Root Cause Analysis</h4>
+                  <p className="text-xs text-gray-600 bg-yellow-50 p-3 rounded border border-yellow-200">
+                    {anomaly.details.rootCause}
+                  </p>
+                </div>
+              )}
+              
+              {/* Remediation Steps (Bedrock) */}
+              {anomaly.details.remediation && anomaly.details.remediation.length > 0 && (
+                <div className="mb-3">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Remediation</h4>
+                  <ul className="list-disc list-inside text-xs text-gray-600 space-y-1 bg-green-50 p-3 rounded border border-green-200">
+                    {anomaly.details.remediation.map((step, index) => (
+                      <li key={index}>{step}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {/* LLM Analysis (Bedrock) */}
+              {anomaly.details.llmAnalysis && (
+                <div className="mb-3">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">AI Analysis</h4>
+                  <div className="bg-blue-50 p-3 rounded border border-blue-200 text-xs text-gray-700">
+                    <p>{anomaly.details.llmAnalysis}</p>
+                    {anomaly.model && (
+                      <p className="mt-2 text-blue-600 text-right italic">
+                        — Analysis by {anomaly.model}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Generic Recommended Actions (if no specific remediation) */}
+              {(!anomaly.details.remediation || anomaly.details.remediation.length === 0) && (
+                <div className="mt-3">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Actions</h4>
+                  <ul className="list-disc list-inside text-xs text-gray-600 space-y-1">
+                    <li>Investigate the {anomaly.resourceType} for the affected resource</li>
+                    <li>Check recent deployments or configuration changes</li>
+                    <li>Review related resources for similar patterns</li>
+                    {anomaly.status === 'Critical' && (
+                      <li className="text-red-600 font-medium">Consider immediate remediation</li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </div>

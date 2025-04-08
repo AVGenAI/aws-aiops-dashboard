@@ -16,9 +16,16 @@ interface Anomaly {
     affectedMetrics?: string[];
     logPatterns?: string[];
     traceIds?: string[];
+    rootCause?: string;
+    remediation?: string[];
+    llmAnalysis?: string;
   };
   enabled: boolean;
+  model?: string; // Optional field for Bedrock models
 }
+
+type AiService = 'sagemaker' | 'bedrock';
+type BedrockModel = 'anthropic.claude-v2' | 'anthropic.claude-instant-v1' | 'amazon.titan-text-express-v1';
 
 export default function AnomaliesPage() {
   const { currentEnv } = useEnvironment();
@@ -26,15 +33,22 @@ export default function AnomaliesPage() {
   const [error, setError] = useState<string | null>(null);
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
   const [activeTab, setActiveTab] = useState<'logs' | 'metrics' | 'traces'>('logs');
+  const [aiService, setAiService] = useState<AiService>('sagemaker');
+  const [bedrockModel, setBedrockModel] = useState<BedrockModel>('anthropic.claude-v2');
   
-  // Fetch anomalies when the component mounts or when the environment or tab changes
+  // Fetch anomalies when the component mounts or when the environment, tab, or AI service changes
   useEffect(() => {
     const fetchAnomalies = async () => {
       setLoading(true);
       setError(null);
       
       try {
-        const response = await fetch(`/api/anomalies?environment=${currentEnv.id}&resourceType=${activeTab}`);
+        // Choose the API endpoint based on the selected AI service
+        const endpoint = aiService === 'sagemaker' 
+          ? `/api/anomalies?environment=${currentEnv.id}&resourceType=${activeTab}`
+          : `/api/bedrock-anomalies?environment=${currentEnv.id}&resourceType=${activeTab}&model=${bedrockModel}`;
+        
+        const response = await fetch(endpoint);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -43,19 +57,24 @@ export default function AnomaliesPage() {
         const data = await response.json();
         setAnomalies(data.anomalies || []);
       } catch (e: any) {
-        console.error('Error fetching anomalies:', e);
-        setError(e.message || 'Failed to fetch anomalies');
+        console.error(`Error fetching anomalies from ${aiService}:`, e);
+        setError(e.message || `Failed to fetch anomalies from ${aiService}`);
       } finally {
         setLoading(false);
       }
     };
     
     fetchAnomalies();
-  }, [currentEnv.id, activeTab]);
+  }, [currentEnv.id, activeTab, aiService, bedrockModel]);
   
   const toggleAnomaly = async (id: string, enabled: boolean) => {
     try {
-      const response = await fetch('/api/anomalies', {
+      // Choose the API endpoint based on the selected AI service
+      const endpoint = aiService === 'sagemaker' 
+        ? '/api/anomalies'
+        : '/api/bedrock-anomalies';
+      
+      const response = await fetch(endpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -112,13 +131,68 @@ export default function AnomaliesPage() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">Resources Monitored</h3>
           <div className="flex justify-between items-end">
             <p className="text-2xl font-bold text-blue-600">{anomalies.length}</p>
-            <p className="text-xs text-gray-500">Using SageMaker AI</p>
+            <p className="text-xs text-gray-500">
+              Using {aiService === 'sagemaker' ? 'SageMaker AI' : 'Bedrock AI'}
+            </p>
           </div>
         </div>
       </div>
       
-      {/* Tabs */}
+      {/* AI Service Selection */}
       <div className="bg-white rounded-lg border border-gray-300 shadow-sm overflow-hidden mb-6">
+        <div className="p-4 border-b border-gray-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">AI Service for Anomaly Detection</h3>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center">
+              <input
+                type="radio"
+                id="sagemaker"
+                name="aiService"
+                value="sagemaker"
+                checked={aiService === 'sagemaker'}
+                onChange={() => setAiService('sagemaker')}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="sagemaker" className="ml-2 block text-sm text-gray-700">
+                Amazon SageMaker
+              </label>
+            </div>
+            <div className="flex items-center">
+              <input
+                type="radio"
+                id="bedrock"
+                name="aiService"
+                value="bedrock"
+                checked={aiService === 'bedrock'}
+                onChange={() => setAiService('bedrock')}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="bedrock" className="ml-2 block text-sm text-gray-700">
+                Amazon Bedrock
+              </label>
+            </div>
+            
+            {aiService === 'bedrock' && (
+              <div className="ml-6 flex items-center">
+                <label htmlFor="bedrockModel" className="block text-sm text-gray-700 mr-2">
+                  Model:
+                </label>
+                <select
+                  id="bedrockModel"
+                  value={bedrockModel}
+                  onChange={(e) => setBedrockModel(e.target.value as BedrockModel)}
+                  className="block w-48 pl-3 pr-10 py-1 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                >
+                  <option value="anthropic.claude-v2">Claude V2</option>
+                  <option value="anthropic.claude-instant-v1">Claude Instant</option>
+                  <option value="amazon.titan-text-express-v1">Amazon Titan</option>
+                </select>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Data Type Tabs */}
         <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveTab('logs')}
@@ -193,15 +267,38 @@ export default function AnomaliesPage() {
         </div>
       </div>
       
-      {/* SageMaker Integration Info */}
-      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 text-sm text-blue-700">
+      {/* AI Service Info Box */}
+      <div className={`p-4 rounded-lg border text-sm ${
+        aiService === 'sagemaker' 
+          ? 'bg-blue-50 border-blue-200 text-blue-700' 
+          : 'bg-purple-50 border-purple-200 text-purple-700'
+      }`}>
         <div className="flex items-start">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
-            <p className="font-medium">Powered by Amazon SageMaker</p>
-            <p className="mt-1">Anomaly detection is performed using machine learning models trained on your AWS resource data. The models continuously learn and adapt to your environment's patterns to provide accurate anomaly detection.</p>
+            {aiService === 'sagemaker' ? (
+              <>
+                <p className="font-medium">Powered by Amazon SageMaker</p>
+                <p className="mt-1">
+                  Anomaly detection is performed using machine learning models trained on your AWS resource data. 
+                  The models continuously learn and adapt to your environment's patterns to provide accurate anomaly detection.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-medium">Powered by Amazon Bedrock - {bedrockModel.split('.')[1]}</p>
+                <p className="mt-1">
+                  Anomaly detection is enhanced with generative AI capabilities from Amazon Bedrock. 
+                  This provides deeper insights including root cause analysis, detailed remediation steps, 
+                  and natural language explanations of detected anomalies.
+                </p>
+                <p className="mt-2 text-xs">
+                  <span className="font-medium">Current model:</span> {bedrockModel}
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
